@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_15_sets",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.00576,
+  "latency_sec": 3.7,
+  "diagnosis": "The function uses the union operator (|) instead of the intersection operator (&) to find common elements between two lists.",
+  "function_name": "find_common",
+  "coverage": 100
+}

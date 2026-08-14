@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_12_invalid_input",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.01,
+  "latency_sec": 6.3,
+  "diagnosis": "The function does not handle invalid inputs (None or non-numeric strings) and raises exceptions instead of returning 0 as expected.",
+  "function_name": "parse_age",
+  "coverage": 100
+}

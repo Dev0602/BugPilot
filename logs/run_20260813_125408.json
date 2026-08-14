@@ -1,0 +1,205 @@
+{
+  "timestamp": "20260813_125408",
+  "results": [
+    {
+      "bug": "bugs/bug_01_calculator",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00602,
+      "latency_sec": 5.1,
+      "diagnosis": "The add function uses subtraction operator (-) instead of addition operator (+), causing incorrect results.",
+      "function_name": "add",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_02_discount",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00737,
+      "latency_sec": 5.2,
+      "diagnosis": "The function forgot to divide discount_percent by 100 to convert the percentage to a decimal, causing it to calculate an incorrect discount amount.",
+      "function_name": "apply_discount",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_03_grade",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00451,
+      "latency_sec": 4.1,
+      "diagnosis": "The function uses > instead of >= when comparing the score to 60, causing a score of exactly 60 to return False instead of True.",
+      "function_name": "passing_grade",
+      "coverage": 86
+    },
+    {
+      "bug": "bugs/bug_04_reverse",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.0066,
+      "latency_sec": 5.0,
+      "diagnosis": "The function reverses the entire string character by character instead of reversing the order of words.",
+      "function_name": "reverse_words",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_05_sum_range",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.0034,
+      "latency_sec": 3.2,
+      "diagnosis": "The range(n) function generates 0 to n-1, but the test expects the sum of 1 to n inclusive.",
+      "function_name": "sum_up_to",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_06_mutable_default",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00721,
+      "latency_sec": 6.3,
+      "diagnosis": "Mutable default argument (items=[]) persists across function calls, causing items from previous calls to leak into subsequent calls.",
+      "function_name": "add_item",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_07_word_count",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00533,
+      "latency_sec": 3.9,
+      "diagnosis": "The function is case-sensitive and treats different case variations of the same word as different words; it should convert words to lowercase before counting them.",
+      "function_name": "count_words",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_08_factorial",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.02899,
+      "latency_sec": 5.7,
+      "diagnosis": "The base case only checks if n == 1, but it should also handle n == 0, causing infinite recursion when factorial(0) is called.",
+      "function_name": "factorial",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_09_ats_exact_match",
+      "success": true,
+      "attempts": 0,
+      "cost_usd": 0,
+      "latency_sec": 0,
+      "diagnosis": null,
+      "function_name": null,
+      "coverage": 13
+    },
+    {
+      "bug": "bugs/bug_10_prime_checker",
+      "success": true,
+      "attempts": 0,
+      "cost_usd": 0,
+      "latency_sec": 0,
+      "diagnosis": null,
+      "function_name": null,
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_11_safe_divide",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00949,
+      "latency_sec": 5.8,
+      "diagnosis": "The safe_divide function does not handle division by zero and raises a ZeroDivisionError instead of returning 0.",
+      "function_name": "safe_divide",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_12_invalid_input",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01043,
+      "latency_sec": 7.5,
+      "diagnosis": "The function does not handle invalid input (non-numeric strings) or None values, causing ValueError and TypeError exceptions instead of returning 0 as expected.",
+      "function_name": "parse_age",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_13_list_index",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01117,
+      "latency_sec": 6.4,
+      "diagnosis": "The function uses an off-by-one error accessing items[len(items)] which is out of range; it should use items[len(items)-1] or items[-1], and return None for empty lists.",
+      "function_name": "get_last_element",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_14_dictionary",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01072,
+      "latency_sec": 6.2,
+      "diagnosis": "The function uses direct dictionary key access with user_dict[\"email\"] which raises a KeyError when the key doesn't exist; it should use user_dict.get(\"email\") to return None for missing keys.",
+      "function_name": "get_user_email",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_15_sets",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00346,
+      "latency_sec": 3.1,
+      "diagnosis": "The function uses the union operator (|) instead of the intersection operator (&) to find common elements between two lists.",
+      "function_name": "find_common",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_16_string_processing",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00299,
+      "latency_sec": 2.8,
+      "diagnosis": "The function converts the input to lowercase but fails to strip leading and trailing whitespace.",
+      "function_name": "normalize_username",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_17_recursion",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.08317,
+      "latency_sec": 7.4,
+      "diagnosis": "The base case checks for n == 1 but should check for n == 0, causing infinite recursion when factorial(0) is called since it keeps decrementing into negative numbers.",
+      "function_name": "factorial",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_18_algorithm",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01094,
+      "latency_sec": 7.7,
+      "diagnosis": "The while loop condition uses 'low < high' instead of 'low <= high', causing it to exit before checking the final element when low equals high.",
+      "function_name": "binary_search",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_19_empty_input",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00682,
+      "latency_sec": 4.7,
+      "diagnosis": "The function crashes with ZeroDivisionError when given an empty list instead of returning 0.",
+      "function_name": "calculate_average",
+      "coverage": 100
+    },
+    {
+      "bug": "bugs/bug_20_buzzword_detection",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00731,
+      "latency_sec": 5.7,
+      "diagnosis": "The function doesn't convert the input text to lowercase, so it fails to match buzzwords with different casing like \"Passionate\" or \"NINJA\".",
+      "function_name": "count_buzzwords",
+      "coverage": 100
+    }
+  ]
+}

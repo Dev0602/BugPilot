@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_14_dictionary",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.00341,
+  "latency_sec": 2.8,
+  "diagnosis": "The function uses direct dictionary access which raises KeyError when the 'email' key is missing, but should return None instead.",
+  "function_name": "get_user_email",
+  "coverage": 100
+}

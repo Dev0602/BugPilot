@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_02_discount",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.00353,
+  "latency_sec": 4.5,
+  "diagnosis": "The discount_percent parameter needs to be divided by 100 to convert from a percentage value to a decimal multiplier.",
+  "function_name": "apply_discount",
+  "coverage": 100
+}

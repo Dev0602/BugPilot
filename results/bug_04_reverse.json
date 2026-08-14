@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_04_reverse",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.00269,
+  "latency_sec": 2.1,
+  "diagnosis": "The function reverses the entire string character by character instead of reversing the order of words.",
+  "function_name": "reverse_words",
+  "coverage": 100
+}

@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_09_ats_exact_match",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.03481,
+  "latency_sec": 8.9,
+  "diagnosis": "The function performs a naive substring match instead of matching whole words with boundaries, causing \"js\" to incorrectly match as a substring in \"jsonify\".",
+  "function_name": "_exact_match",
+  "coverage": 13
+}

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PatchPilot — Autonomous AI Debugging Agent</title>
+<style>
+  :root {
+    --bg: #0b0d10;
+    --surface: #14171b;
+    --surface-2: #1b1f24;
+    --border: #2a2f36;
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa1ab;
+    --text-muted: #656d78;
+    --accent: #4f8cff;
+    --success: #3ecf8e;
+    --success-bg: #123024;
+    --danger: #ff6b6b;
+    --danger-bg: #2e1618;
+    --mono: 'SF Mono', 'Fira Code', Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header { margin-bottom: 32px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, #4f8cff, #3ecf8e);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #06121a;
+    flex-shrink: 0;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .tagline { color: var(--text-secondary); font-size: 14px; margin: 0; }
+
+  nav { display: flex; gap: 4px; margin: 24px 0 28px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--text-secondary);
+    cursor: pointer; border-bottom: 2px solid transparent; user-select: none;
+  }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text-primary); }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ---- Stat cards ---- */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px;
+  }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .stat-value { font-size: 24px; font-weight: 600; }
+  .stat-value.success { color: var(--success); }
+
+  /* ---- Bug list ---- */
+  .section-label {
+    font-size: 12px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.04em; margin: 28px 0 10px;
+  }
+  .bug-list { display: flex; flex-direction: column; gap: 6px; }
+  .bug-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .bug-row:hover { border-color: var(--accent); }
+  .bug-row.selected { border-color: var(--accent); background: var(--surface-2); }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: var(--success);
+  }
+  .bug-name { font-family: var(--mono); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bug-meta { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .badge {
+    font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 100px;
+    background: var(--success-bg); color: var(--success);
+  }
+
+  /* ---- Detail panel ---- */
+  .detail {
+    margin-top: 20px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .detail-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .detail-title { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+  .detail-badges { display: flex; gap: 8px; }
+  .pill { font-size: 12px; padding: 3px 10px; border-radius: 100px; background: var(--surface-2); color: var(--text-secondary); }
+  .pill.ok { background: var(--success-bg); color: var(--success); }
+
+  .detail-body { padding: 20px; }
+  .detail-block { margin-bottom: 18px; }
+  .detail-block:last-child { margin-bottom: 0; }
+  .block-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .diagnosis-text { font-size: 14px; color: var(--text-primary); line-height: 1.6; }
+  .metrics-row { display: flex; gap: 24px; }
+  .metric { font-size: 13px; }
+  .metric span { color: var(--text-muted); }
+  code.fn { font-family: var(--mono); background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+  .verify-steps { display: flex; flex-direction: column; gap: 6px; }
+  .verify-step { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .verify-step .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .verify-step .dot.pass { background: var(--success); }
+  .verify-step .dot.fail { background: var(--danger); }
+
+  /* ---- Benchmark view ---- */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .compare-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .compare-card h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
+  .compare-card .sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+  .big-num { font-size: 36px; font-weight: 700; }
+  .compare-card.patchpilot .big-num { color: var(--success); }
+  .compare-list { list-style: none; padding: 0; margin: 16px 0 0; font-size: 13px; color: var(--text-secondary); }
+  .compare-list li { padding: 4px 0; display: flex; justify-content: space-between; }
+  .compare-list li b { color: var(--text-primary); font-weight: 500; }
+
+  .finding-box {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 18px 20px; margin-bottom: 24px; font-size: 13.5px; color: var(--text-secondary); line-height: 1.7;
+  }
+  .finding-box strong { color: var(--text-primary); }
+
+  table.bench-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.bench-table th {
+    text-align: left; padding: 10px 12px; color: var(--text-muted); font-weight: 500;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border);
+  }
+  table.bench-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  table.bench-table tr:last-child td { border-bottom: none; }
+  .check { color: var(--success); }
+  .cross { color: var(--danger); }
+  .cat-tag { font-size: 11px; color: var(--text-muted); }
+
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">PP</div>
+      <h1>PatchPilot</h1>
+    </div>
+    <p class="tagline">Autonomous AI debugging agent — diagnoses failing tests, generates targeted patches, verifies via sandboxed re-execution</p>
+  </header>
+
+  <nav>
+    <div class="tab active" data-view="bugs">Bugs</div>
+    <div class="tab" data-view="benchmark">Benchmark</div>
+  </nav>
+
+  <!-- BUGS VIEW -->
+  <div class="view active" id="view-bugs">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Bugs fixed</div>
+        <div class="stat-value success">20 / 20</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Success rate</div>
+        <div class="stat-value success">100%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total cost</div>
+        <div class="stat-value">$0.0948</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total time</div>
+        <div class="stat-value">34.6s</div>
+      </div>
+    </div>
+
+    <div class="section-label">Bug set (20)</div>
+    <div class="bug-list" id="bug-list"></div>
+
+    <div class="detail" id="detail" style="display:none;"></div>
+  </div>
+
+  <!-- BENCHMARK VIEW -->
+  <div class="view" id="view-benchmark">
+    <div class="finding-box">
+      <strong>Honest finding:</strong> PatchPilot and a one-shot Claude baseline (no sandbox, no tools, no retries) both achieved 100% repair success on this 20-bug benchmark. This indicates the benchmark's bug complexity was not sufficient to demonstrate a raw success-rate advantage for the agentic workflow. PatchPilot's demonstrated contribution is therefore <strong>execution-based verification, isolated sandboxed patch application, and structured retry handling</strong> — not a claimed improvement in raw repair accuracy.
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card patchpilot">
+        <h3>PatchPilot</h3>
+        <div class="sub">Agent + Docker sandbox + retries</div>
+        <div class="big-num">20/20</div>
+        <ul class="compare-list">
+          <li><span>Success rate</span><b>100%</b></li>
+          <li><span>Avg attempts</span><b>0.9</b></li>
+          <li><span>Total cost</span><b>$0.0948</b></li>
+          <li><span>Verification</span><b>Real test re-execution</b></li>
+          <li><span>Retry on failure</span><b>Yes (max 3, w/ memory)</b></li>
+        </ul>
+      </div>
+      <div class="compare-card">
+        <h3>Baseline</h3>
+        <div class="sub">One-shot Claude, no tools</div>
+        <div class="big-num">20/20</div>
+        <ul class="compare-list">
+          <li><span>Success rate</span><b>100%</b></li>
+          <li><span>Avg attempts</span><b>1 (fixed)</b></li>
+          <li><span>Total cost</span><b>not tracked</b></li>
+          <li><span>Verification</span><b>None</b></li>
+          <li><span>Retry on failure</span><b>No</b></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-label">Per-bug results</div>
+    <table class="bench-table" id="bench-table">
+      <thead>
+        <tr><th>Bug</th><th>Category</th><th>PatchPilot</th><th>Baseline</th><th>Attempts</th><th>Cost</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <footer>
+    Built by Baireddy Venkata Devendhar Reddy · Claude Haiku 4.5 · Docker-sandboxed execution · <a href="https://github.com/Dev0602" style="color:var(--accent);text-decoration:none;">github.com/Dev0602</a>
+  </footer>
+
+</div>
+
+<script>
+const BUGS = [
+  {id:"bug_01_calculator", category:"Arithmetic", fn:"add", diagnosis:"The add function is using subtraction operator instead of addition operator.", attempts:1, cost:0.00167, latency:1.5},
+  {id:"bug_02_discount", category:"Arithmetic", fn:"apply_discount", diagnosis:"The discount_percent is not being divided by 100, so the function subtracts the full product instead of the percentage amount.", attempts:1, cost:0.00190, latency:1.4},
+  {id:"bug_03_grade", category:"Boundary", fn:"passing_grade", diagnosis:"The function uses > 60 instead of >= 60, so a score of exactly 60 returns False when it should return True.", attempts:1, cost:0.00191, latency:1.4},
+  {id:"bug_04_reverse", category:"String logic", fn:"reverse_words", diagnosis:"The function reverses the entire string character by character instead of reversing the order of words in the sentence.", attempts:1, cost:0.00188, latency:1.4},
+  {id:"bug_05_sum_range", category:"Boundary", fn:"sum_up_to", diagnosis:"The range function starts from 0, so range(n) excludes n itself; it should be range(n+1) to include n.", attempts:1, cost:0.00210, latency:1.6},
+  {id:"bug_06_mutable_default", category:"Python gotcha", fn:"add_item", diagnosis:"The function uses a mutable default argument (an empty list) which persists across function calls, causing items from previous calls to leak into subsequent calls.", attempts:1, cost:0.00212, latency:1.7},
+  {id:"bug_07_word_count", category:"Data structure", fn:"count_words", diagnosis:"The function does not convert words to lowercase before counting them, causing different cases of the same word to be counted separately.", attempts:1, cost:0.00213, latency:2.2},
+  {id:"bug_08_factorial", category:"Recursion", fn:"factorial", diagnosis:"The factorial function is missing a base case for n == 0, causing infinite recursion when factorial(0) is called.", attempts:1, cost:0.02718, latency:1.9},
+  {id:"bug_09_ats_exact_match", category:"Regression (real code)", fn:"_exact_match", diagnosis:"The function performs a naive substring match instead of respecting word boundaries, causing partial matches like \"js\" to match within \"jsonify\".", attempts:1, cost:0.00674, latency:2.1, real:true},
+  {id:"bug_10_prime_checker", category:"Edge case", fn:"is_prime", diagnosis:"The function does not reject numbers less than 2, which are not prime by definition.", attempts:1, cost:0.00203, latency:1.4},
+  {id:"bug_11_safe_divide", category:"Exception handling", fn:"safe_divide", diagnosis:"The function does not check for division by zero before performing the division operation, causing a ZeroDivisionError when b is 0.", attempts:1, cost:0.00196, latency:2.2},
+  {id:"bug_12_invalid_input", category:"Exception handling", fn:"parse_age", diagnosis:"The function does not handle invalid string inputs or None values, which should return 0 instead of raising ValueError or TypeError.", attempts:1, cost:0.00217, latency:1.7},
+  {id:"bug_13_list_index", category:"List", fn:"get_last_element", diagnosis:"The function uses an off-by-one error by accessing index len(items) instead of len(items) - 1, and does not handle the empty list case which should return None.", attempts:1, cost:0.00256, latency:1.8},
+  {id:"bug_14_dictionary", category:"Dictionary", fn:"get_user_email", diagnosis:"The function assumes the 'email' key always exists in the dictionary, causing a KeyError when the key is missing or the dictionary is empty.", attempts:1, cost:0.00224, latency:1.7},
+  {id:"bug_15_sets", category:"Set", fn:"find_common", diagnosis:"The function uses the union operator (|) instead of the intersection operator (&) to find common elements between two lists.", attempts:1, cost:0.00218, latency:1.4},
+  {id:"bug_16_string_processing", category:"String", fn:"normalize_username", diagnosis:"The function is missing a strip() call to remove leading and trailing whitespace before converting to lowercase.", attempts:1, cost:0.00191, latency:2.2},
+  {id:"bug_17_recursion", category:"Recursion", fn:"factorial", diagnosis:"The base case only checks if n == 1, so when n == 0 is passed, the function infinitely recurses instead of returning 1.", attempts:1, cost:0.02734, latency:2.0},
+  {id:"bug_18_algorithm", category:"Algorithm", fn:"binary_search", diagnosis:"The while loop condition uses low < high instead of low <= high, which causes the function to exit prematurely without checking the final element.", attempts:1, cost:0.00258, latency:2.4},
+  {id:"bug_19_empty_input", category:"Edge case", fn:"calculate_average", diagnosis:"The function crashes with a ZeroDivisionError when given an empty list because it attempts to divide by len(numbers) which is 0.", attempts:1, cost:0.00213, latency:2.4},
+  {id:"bug_20_buzzword_detection", category:"Regression (realistic)", fn:"count_buzzwords", diagnosis:"The function doesn't convert the input text to lowercase before checking for buzzwords, so it fails to match different capitalizations.", attempts:1, cost:0.00207, latency:1.6},
+];
+
+function renderBugList() {
+  const list = document.getElementById('bug-list');
+  list.innerHTML = BUGS.map(b => `
+    <div class="bug-row" data-id="${b.id}">
+      <div class="status-dot"></div>
+      <div class="bug-name">${b.id}</div>
+      <div class="bug-meta">${b.category}</div>
+      <div class="badge">Fixed · ${b.attempts} attempt${b.attempts !== 1 ? 's' : ''}</div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.bug-row').forEach(row => {
+    row.addEventListener('click', () => selectBug(row.dataset.id));
+  });
+}
+
+function selectBug(id) {
+  document.querySelectorAll('.bug-row').forEach(r => r.classList.toggle('selected', r.dataset.id === id));
+  const b = BUGS.find(x => x.id === id);
+  const detail = document.getElementById('detail');
+  detail.style.display = 'block';
+  detail.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-title">${b.id}</div>
+      <div class="detail-badges">
+        ${b.real ? '<div class="pill">Real codebase</div>' : ''}
+        <div class="pill ok">Fixed</div>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-block">
+        <div class="block-label">Diagnosis</div>
+        <div class="diagnosis-text">${b.diagnosis}</div>
+      </div>
+      <div class="detail-block">
+        <div class="block-label">Patched function</div>
+        <code class="fn">${b.fn}()</code>
+      </div>
+      <div class="detail-block">
+        <div class="block-label">Metrics</div>
+        <div class="metrics-row">
+          <div class="metric"><span>Attempts </span>${b.attempts}</div>
+          <div class="metric"><span>Cost </span>$${b.cost.toFixed(5)}</div>
+          <div class="metric"><span>Latency </span>${b.latency}s</div>
+        </div>
+      </div>
+      <div class="detail-block">
+        <div class="block-label">Verification</div>
+        <div class="verify-steps">
+          <div class="verify-step"><div class="dot fail"></div> Initial test run — failed</div>
+          <div class="verify-step"><div class="dot pass"></div> Attempt 1 — patch applied, tests re-run — passed</div>
+        </div>
+      </div>
+    </div>
+  `;
+  detail.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function renderBenchTable() {
+  const tbody = document.querySelector('#bench-table tbody');
+  tbody.innerHTML = BUGS.map(b => `
+    <tr>
+      <td style="font-family:var(--mono);font-size:12px;">${b.id}</td>
+      <td class="cat-tag">${b.category}</td>
+      <td class="check">✓ Pass</td>
+      <td class="check">✓ Pass</td>
+      <td>${b.attempts}</td>
+      <td>$${b.cost.toFixed(5)}</td>
+    </tr>
+  `).join('');
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+  });
+});
+
+renderBugList();
+renderBenchTable();
+selectBug('bug_09_ats_exact_match');
+</script>
+
+</body>
+</html>

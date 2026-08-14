@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_13_list_index",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.00895,
+  "latency_sec": 5.7,
+  "diagnosis": "The function uses index `len(items)` instead of `len(items) - 1`, which causes an out-of-range error, and it doesn't handle the empty list case by returning None.",
+  "function_name": "get_last_element",
+  "coverage": 100
+}

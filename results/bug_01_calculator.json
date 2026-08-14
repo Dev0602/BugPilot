@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_01_calculator",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.00397,
+  "latency_sec": 5.2,
+  "diagnosis": "The add function is using subtraction operator instead of addition operator.",
+  "function_name": "add",
+  "coverage": 100
+}

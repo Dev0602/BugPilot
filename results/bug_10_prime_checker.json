@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_10_prime_checker",
+  "success": true,
+  "attempts": 0,
+  "cost_usd": 0,
+  "latency_sec": 0,
+  "diagnosis": null,
+  "function_name": null,
+  "coverage": 100
+}

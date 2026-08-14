@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_06_mutable_default",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.00458,
+  "latency_sec": 3.3,
+  "diagnosis": "Mutable default argument persists across function calls, causing items from previous calls to leak into subsequent calls.",
+  "function_name": "add_item",
+  "coverage": 100
+}

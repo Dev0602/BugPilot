@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_08_factorial",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.11066,
+  "latency_sec": 10.7,
+  "diagnosis": "The base case only checks if n == 1, which causes infinite recursion when n=0 since it keeps decrementing to negative numbers; the base case should be n <= 1 to properly handle both 0! = 1 and 1! = 1.",
+  "function_name": "factorial",
+  "coverage": 100
+}

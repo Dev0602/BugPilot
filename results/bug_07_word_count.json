@@ -1,0 +1,10 @@
+{
+  "bug": "bugs/bug_07_word_count",
+  "success": true,
+  "attempts": 1,
+  "cost_usd": 0.0072,
+  "latency_sec": 6.1,
+  "diagnosis": "The function treats words with different cases as separate words instead of counting them together in a case-insensitive manner.",
+  "function_name": "count_words",
+  "coverage": 100
+}
