@@ -5,7 +5,7 @@ import os
 import json
 from dotenv import load_dotenv
 from anthropic import Anthropic
-from tools import read_file, write_file, list_directory, search_code, get_function_signature
+from tools import read_file, write_file, list_directory, search_code, get_function_signature, detect_requirements
 from db import init_db, save_result
 
 load_dotenv()
@@ -78,24 +78,39 @@ def parse_coverage(logs):
 
 
 def run_tests(bug_dir):
-    """Runs pytest (with coverage) inside the sandbox for a given bug folder."""
+    """
+    Runs pytest (with coverage) inside the sandbox for a given bug folder.
+    If the project has its own requirements.txt or pyproject.toml, those
+    dependencies are installed first, in the SAME container as the test
+    run (installing in a separate container doesn't work — each container
+    has its own isolated filesystem, so packages don't carry over).
+    """
+    install_cmd = detect_requirements(bug_dir)
+
+    if install_cmd:
+        full_command = f"sh -c '{install_cmd} -q && pytest -v --cov=. --cov-report=term-missing'"
+        needs_network = True
+    else:
+        full_command = "pytest -v --cov=. --cov-report=term-missing"
+        needs_network = False
+
     container = docker_client.containers.run(
         "bugpilot-sandbox",
-        command="pytest -v --cov=. --cov-report=term-missing",
+        command=full_command,
         volumes={
             f"{os.getcwd()}/{bug_dir}": {"bind": "/app", "mode": "rw"}
         },
         working_dir="/app",
         detach=True,
-        network_disabled=True,
+        network_disabled=not needs_network,
     )
+
     result = container.wait()
     logs = container.logs().decode()
     container.remove()
     passed = result["StatusCode"] == 0
     coverage = parse_coverage(logs)
     return passed, logs, coverage
-
 
 def apply_function_patch(full_code, function_name, new_function_code):
     """

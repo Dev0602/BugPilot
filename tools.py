@@ -57,3 +57,16 @@ def get_function_signature(base_dir, function_name):
                 if stripped.startswith(f"def {function_name}("):
                     return f"{filename}: {stripped}"
     return f"Function '{function_name}' not found."
+
+
+def detect_requirements(base_dir):
+    """
+    Looks for a requirements.txt or pyproject.toml in base_dir.
+    Returns the install command to run inside the sandbox, or None if
+    no recognized dependency file is found.
+    """
+    if os.path.exists(os.path.join(base_dir, "requirements.txt")):
+        return "pip install -r requirements.txt"
+    if os.path.exists(os.path.join(base_dir, "pyproject.toml")):
+        return "pip install ."
+    return None
