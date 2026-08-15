@@ -2,9 +2,9 @@
   "bug": "bugs/bug_14_dictionary",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.00341,
-  "latency_sec": 2.8,
-  "diagnosis": "The function uses direct dictionary access which raises KeyError when the 'email' key is missing, but should return None instead.",
+  "cost_usd": 0.0099,
+  "latency_sec": 5.8,
+  "diagnosis": "The function directly accesses a dictionary key that may not exist, causing a KeyError instead of returning None when the \"email\" key is missing.",
   "function_name": "get_user_email",
   "coverage": 100
 }

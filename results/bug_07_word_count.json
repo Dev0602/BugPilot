@@ -2,9 +2,9 @@
   "bug": "bugs/bug_07_word_count",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.0072,
-  "latency_sec": 6.1,
-  "diagnosis": "The function treats words with different cases as separate words instead of counting them together in a case-insensitive manner.",
+  "cost_usd": 0.00692,
+  "latency_sec": 5.7,
+  "diagnosis": "The count_words function treats words as case-sensitive, but the test expects case-insensitive counting; the function must convert words to lowercase before counting.",
   "function_name": "count_words",
   "coverage": 100
 }

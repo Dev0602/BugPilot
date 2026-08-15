@@ -1,8 +1,7 @@
 import sqlite3
 import json
 
-DB_PATH = "patchpilot.db"
-
+DB_PATH = "bugpilot.db"
 
 def init_db():
     """Creates the results table if it doesn't already exist."""

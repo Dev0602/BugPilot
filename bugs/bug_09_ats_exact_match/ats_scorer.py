@@ -38,7 +38,6 @@ SOFT_SKILLS = [
     'mentoring', 'cross-functional', 'stakeholder',
 ]
 
-
 def _exact_match(keyword, resume_lower):
     """STRICT: only exact phrase match (with word boundaries)."""
     kw = keyword.lower().strip()

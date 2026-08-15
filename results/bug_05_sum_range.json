@@ -2,9 +2,9 @@
   "bug": "bugs/bug_05_sum_range",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.00329,
-  "latency_sec": 3.8,
-  "diagnosis": "The range function uses range(n) which generates 0 to n-1, but the test expects the sum to include n itself (1 through n inclusive).",
+  "cost_usd": 0.00656,
+  "latency_sec": 4.3,
+  "diagnosis": "The function uses range(n) which generates 0 to n-1, but it should generate 1 to n inclusive to correctly sum all numbers up to and including n.",
   "function_name": "sum_up_to",
   "coverage": 100
 }

@@ -2,7 +2,7 @@ def count_words(text):
     words = text.split()
     counts = {}
     for w in words:
-        w = w.lower()
-        counts[w] = counts.get(w, 0) + 1
+        w_lower = w.lower()
+        counts[w_lower] = counts.get(w_lower, 0) + 1
     return counts
 

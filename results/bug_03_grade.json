@@ -2,9 +2,9 @@
   "bug": "bugs/bug_03_grade",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.00419,
-  "latency_sec": 3.0,
-  "diagnosis": "The comparison operator should be >= instead of > to correctly identify passing grades at 60 and above.",
+  "cost_usd": 0.00281,
+  "latency_sec": 2.3,
+  "diagnosis": "The comparison operator should be >= (greater than or equal to) instead of > (greater than) to allow a score of exactly 60 to pass.",
   "function_name": "passing_grade",
   "coverage": 86
 }

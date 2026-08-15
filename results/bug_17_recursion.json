@@ -2,9 +2,9 @@
   "bug": "bugs/bug_17_recursion",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.08306,
-  "latency_sec": 6.5,
-  "diagnosis": "The base case only checks for n == 1, but should also handle n == 0, causing infinite recursion when factorial(0) is called.",
+  "cost_usd": 0.05541,
+  "latency_sec": 5.8,
+  "diagnosis": "The base case only checks for n == 1, but factorial(0) should also return 1; the condition should be n <= 1 or n == 0 to handle the zero case.",
   "function_name": "factorial",
   "coverage": 100
 }

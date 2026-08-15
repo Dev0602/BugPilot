@@ -2,9 +2,9 @@
   "bug": "bugs/bug_16_string_processing",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.00293,
-  "latency_sec": 3.1,
-  "diagnosis": "The function forgets to strip leading and trailing whitespace before converting to lowercase.",
+  "cost_usd": 0.00455,
+  "latency_sec": 4.2,
+  "diagnosis": "The function converts to lowercase but forgets to strip leading and trailing whitespace.",
   "function_name": "normalize_username",
   "coverage": 100
 }

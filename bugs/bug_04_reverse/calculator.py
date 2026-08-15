@@ -1,4 +1,4 @@
 def reverse_words(sentence):
-    # bug: reverses the whole string instead of the word order
+    # Fixed: reverse the order of words, not characters
     return " ".join(sentence.split()[::-1])
 

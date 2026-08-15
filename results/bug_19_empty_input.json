@@ -2,9 +2,9 @@
   "bug": "bugs/bug_19_empty_input",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.00682,
-  "latency_sec": 4.1,
-  "diagnosis": "The function divides by len(numbers) without checking if the list is empty, causing a ZeroDivisionError when an empty list is passed instead of returning 0.",
+  "cost_usd": 0.00306,
+  "latency_sec": 2.3,
+  "diagnosis": "The function crashes with a ZeroDivisionError when given an empty list because it divides by len(numbers) without checking if the list is empty first.",
   "function_name": "calculate_average",
   "coverage": 100
 }

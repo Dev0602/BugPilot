@@ -2,9 +2,9 @@
   "bug": "bugs/bug_20_buzzword_detection",
   "success": true,
   "attempts": 1,
-  "cost_usd": 0.00945,
-  "latency_sec": 6.3,
-  "diagnosis": "The function doesn't lowercase the input text, so uppercase or mixed-case buzzwords like \"Passionate\" or \"NINJA\" won't match the lowercase buzzword entries in the BUZZWORDS list.",
+  "cost_usd": 0.00717,
+  "latency_sec": 5.0,
+  "diagnosis": "The function doesn't convert the input text to lowercase, so uppercase or mixed-case buzzwords like \"Passionate\" or \"NINJA\" fail to match their lowercase counterparts in the BUZZWORDS list.",
   "function_name": "count_buzzwords",
   "coverage": 100
 }
