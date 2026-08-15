@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://bugpilot-8nbi.onrender.com";
 
 function App() {
   const [summary, setSummary] = useState(null);
@@ -16,7 +16,15 @@ function App() {
     });
   }, []);
 
-  if (!summary) return <div className="App"><p className="loading">Loading...</p></div>;
+if (!summary) return (
+  <div className="App">
+    <p className="loading">
+      Waking up the backend... this can take up to 50 seconds on first load
+      (free-tier hosting spins down when idle).
+    </p>
+  </div>
+);
+
 
   return (
     <div className="App">
