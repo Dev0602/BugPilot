@@ -1,0 +1,29 @@
+name: 'BugPilot'
+description: 'Autonomous AI agent that diagnoses and patches failing tests'
+inputs:
+  anthropic-api-key:
+    description: 'Anthropic API key'
+    required: true
+  target-file:
+    description: 'File to diagnose (relative path)'
+    required: true
+outputs:
+  diagnosis:
+    description: 'The diagnosis of the bug'
+  patch:
+    description: 'The generated patch (unified diff)'
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      shell: bash
+      run: pip install anthropic
+    - name: Run BugPilot
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: python3 ${{ github.action_path }}/run_action.py "${{ inputs.target-file }}"

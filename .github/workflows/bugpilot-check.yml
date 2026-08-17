@@ -1,0 +1,25 @@
+name: BugPilot Auto-Diagnose
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_file:
+        description: 'File to check for bugs'
+        required: true
+        default: 'tools.py'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run BugPilot
+        uses: ./.github/actions/bugpilot-action
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          target-file: ${{ github.event.inputs.target_file }}
+
+      - name: Show diff if patch was made
+        run: git diff || echo "No changes made"
