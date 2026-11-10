@@ -123,6 +123,7 @@ jobs:
 
           with TemporaryDirectory() as temp_dir:
               root = Path(temp_dir)
+              root.chmod(0o755)
 
               (root / "requirements.txt").write_text(
                   "python-slugify==8.0.4\n",
