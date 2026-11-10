@@ -1,0 +1,42 @@
+{
+    "total_instances": 7,
+    "submitted_instances": 7,
+    "completed_instances": 7,
+    "resolved_instances": 2,
+    "unresolved_instances": 5,
+    "empty_patch_instances": 0,
+    "error_instances": 0,
+    "completed_ids": [
+        "django__django-13315",
+        "django__django-15388",
+        "django__django-17051",
+        "matplotlib__matplotlib-25332",
+        "pallets__flask-5063",
+        "sympy__sympy-18835",
+        "sympy__sympy-21171"
+    ],
+    "incomplete_ids": [],
+    "empty_patch_ids": [],
+    "submitted_ids": [
+        "django__django-13315",
+        "django__django-15388",
+        "django__django-17051",
+        "matplotlib__matplotlib-25332",
+        "pallets__flask-5063",
+        "sympy__sympy-18835",
+        "sympy__sympy-21171"
+    ],
+    "resolved_ids": [
+        "django__django-13315",
+        "django__django-17051"
+    ],
+    "unresolved_ids": [
+        "django__django-15388",
+        "matplotlib__matplotlib-25332",
+        "pallets__flask-5063",
+        "sympy__sympy-18835",
+        "sympy__sympy-21171"
+    ],
+    "error_ids": [],
+    "schema_version": 2
+}

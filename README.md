@@ -131,55 +131,47 @@ BugPilot and a one-shot Claude baseline both achieved 100% on this 20-bug benchm
 
 ## External Validation: SWE-bench Lite
 
-[SWE-bench Lite](https://www.swebench.com/) is the industry-standard benchmark for AI coding/debugging agents — 300 real bugs pulled from real GitHub issues in large, well-known open-source Python projects (astropy, django, and others), each with the real human-written fix and a rigorous `FAIL_TO_PASS`/`PASS_TO_PASS` test-based grading criterion. Unlike the internal 20-bug benchmark, these instances are not self-designed, making the result independently credible.
+BugPilot is evaluated on SWE-bench Lite using a no-oracle pipeline.
 
-**Setup:** cloned real repos at their exact pre-fix commits, fed the real GitHub issue text and the real (often 300+ line) buggy file to Claude, generated a patch via the same tool-calling + regex-patching pipeline as the main agent, and scored it using the **official SWE-bench evaluation harness** (not a custom checker).
+The agent receives only the public issue report, the repository at the requested base commit, repository inspection tools, and localization hints derived from public issue text and repository contents.
 
-**Real infrastructure work along the way:**
-- SWE-bench's pre-built Docker images are x86_64-only; fixed by forcing the harness to build environments locally on Apple Silicon (`--force_rebuild --namespace none`)
-- Validated the harness itself first by running it against the official gold (human-written) patches, before ever testing BugPilot's own output
-- Found and fixed the decorator-duplication patching bug described above by reading real test failure logs, not just the pass/fail summary
+It is not given the gold patch, hidden tests, FAIL_TO_PASS, PASS_TO_PASS, or the gold target file/function.
 
-### Results
+### Clean results
 
-| Model | Instances attempted | Resolved | Resolve rate |
-|---|---|---|---|
-| Claude Haiku 4.5 | 8/10 | 2/10 | 20% |
-| Claude Fable 5 (sample 1) | 6/10 | 4/10 | 40% |
-| Claude Fable 5 (sample 2) | 16/16 | 10/16 | 62.5% |
-| **Combined (both Fable 5 samples)** | **22/26** | **14/22** | **54% overall · ~63% of engaged instances** |
+| Evaluation | Selected | Predictions generated | Resolved | Infrastructure errors |
+|---|---:|---:|---:|---:|
+| v1 clean | 5 | 1 | 0/5 | 0 |
+| v2 held-out | 10 | 6 | 0/10 | 0 |
 
-**Headline result: 54% resolved across 26 attempted instances (two independent samples), with a consistent ~63% resolve rate whenever the model actually engages with an instance.** The convergence of this ~63% figure across two separate, non-overlapping instance sets (one mixed astropy/django, one all-django) is real evidence this reflects genuine capability, not a lucky sample.
+All six v2 predictions were evaluated with the official SWE-bench harness. They applied successfully but remained unresolved.
 
-### Honest failure analysis
+Prediction-generation rate is not treated as solve rate. Results are reported over the complete selected sample.
 
-Every non-resolution was investigated and categorized, not just counted:
+Earlier oracle-assisted experiments are retained under `evaluation/swebench/legacy/` as historical development artifacts and are not used as evidence for current end-to-end performance.
 
-- **Model refusals (~30–38% of instances, confirmed on two separate retries with identical results)** — Claude Fable 5 consistently declines to complete the tool call on certain instances. This is real, reproducible model behavior, not a bug in BugPilot's code, and is reported honestly rather than hidden or silently retried into a better-looking number.
-- **Structural patcher limits** — module-level variables and class-level attributes can't be patched by a function-level patcher by definition (e.g. Django's `FILE_UPLOAD_PERMISSIONS`).
-- **Environment-reproduction fragility** — one retry-with-feedback attempt produced a logically correct fix (verified by manually inspecting the diff) that still failed to *apply* inside the harness's exact environment, due to a subtle mismatch between the local checkout and the harness's internal canonical copy. This is a known class of fragility in diff-based patching, documented as a real limitation rather than pursued further by hand-editing.
+### v3 improvements
 
-## GitHub Action
+Before the next held-out evaluation, the repair pipeline was extended with:
 
-BugPilot is also packaged as a reusable GitHub Action (`.github/actions/bugpilot-action/`), verified with a real, successful run — not just written and left untested.
+- no-oracle repository localization
+- bounded repository exploration
+- function replacement and constrained single-file unified-diff repairs
+- support for class/module-level edits and adding methods/functions
+- rejection of test edits, path traversal, multi-file patches, new/deleted/renamed files
+- Python AST validation
+- git diff validation and bounded patch-size checks
+- rollback and repair retry
+- cumulative token, cost, latency, and tool-trace telemetry
 
-**What it does:** given a target file, checks it out in CI, calls the real Anthropic API (via a GitHub Secret, never committed to code), and reports whether a bug was found — with a diagnosis if so.
+The local verifier checks patch safety, syntax, and repository scope. Official SWE-bench harness tests remain the source of end-to-end correctness.
 
-**Real verified run:** triggered manually against this repo's own `tools.py` — succeeded end-to-end in ~14s, correctly reporting *"No bug found"* on genuinely clean, already-tested code (a true negative, not a hallucinated fix).
-
-```yaml
-# .github/workflows/bugpilot-check.yml
-- name: Run BugPilot
-  uses: ./.github/actions/bugpilot-action
-  with:
-    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    target-file: tools.py
-```
+The v1 and v2 instances are now development data. The final v3 result will use a new held-out sample after the implementation is frozen.
 
 ## Example Run
 
 ```
-BUG: bugs/bug_09_ats_exact_match
+BUG: benchmarks/internal_bugs/bug_09_ats_exact_match
 ==================================================
 --- Attempt 1 of 3 ---
   (investigating: list_directory({}))
@@ -188,50 +180,49 @@ Diagnosis: The function performs a naive substring match instead of
 respecting word boundaries, causing partial matches like "js" to
 match within "jsonify".
 Patching function: _exact_match
-SUCCESS after 1 attempt(s) | cost=$0.00674 | time=2.1s
-```
+SUCCESS after 1 attempt(s) | cost=$0.006## Project Structure
 
-## Project Structure
-
-```
+```text
 BugPilot/
-├── agent.py               # Core agent: sandbox, tools, diagnosis, patching, retry loop
-├── tools.py                 # read_file / write_file / list_directory / search_code / get_function_signature
-├── db.py                     # SQLite storage (init_db, save_result, get_all_results)
-├── api.py                     # FastAPI backend for the live dashboard
-├── baseline.py                 # One-shot comparison system (no tools/sandbox)
-├── run_baseline.py               # Runs the baseline across all bugs
-├── reset_bugs.py                   # Restores all bugs to their broken state
-├── swebench_batch_solve.py          # SWE-bench Lite integration: clone, diagnose, patch, format
-├── Dockerfile                       # Custom sandbox image (pytest/pytest-cov pre-installed)
-├── requirements.txt
-├── .env.example
-├── .gitignore
-│
-├── .github/
-│   ├── workflows/bugpilot-check.yml    # Workflow that triggers the Action
-│   └── actions/bugpilot-action/          # The reusable Action (action.yml + run_action.py)
-│
-├── bugs/
-│   ├── bug_01_calculator/ ... bug_20_buzzword_detection/
-│   └── (each: source file + test file)
-│
-├── results/
-│   └── bug_XX.json          # Structured result per bug
-│
-├── logs/
-│   └── run_TIMESTAMP.json     # Timestamped full-run logs
-│
-├── bugpilot.db                # SQLite database (all results, queryable)
-│
+├── backend/
+│   └── app/
+│       ├── agent.py
+│       ├── api.py
+│       ├── config.py
+│       ├── db.py
+│       └── tools.py
 ├── frontend/
-│   └── index.html                # Static dashboard: bug browser + benchmark comparison view
-│
-├── dashboard/
-│   └── src/                        # Live React dashboard (deployed on Vercel), with replay mode
-│
-└── screenshots/
-    └── architecture.png            # Architecture diagram
+│   ├── public/
+│   ├── src/
+│   ├── package.json
+│   └── package-lock.json
+├── benchmarks/
+│   └── internal_bugs/
+├── evaluation/
+│   ├── internal/
+│   │   ├── baseline.py
+│   │   ├── run_bugpilot.py
+│   │   └── validate_benchmark.py
+│   └── swebench/
+│       ├── current/
+│       └── legacy/
+├── scripts/
+│   ├── reset_bugs.py
+│   └── run_baseline.py
+├── tests/
+├── screenshots/
+├── .github/
+│   └── workflows/
+├── Dockerfile
+├── requirements.txt
+├── requirements-dev.txt
+├── .env.example
+├── .dockerignore
+├── .gitignore
+└── README.md
+```
+
+ecture diagram
 ```
 
 ## Installation
@@ -257,14 +248,14 @@ python3 agent.py
 ## Running the Baseline
 
 ```bash
-python3 reset_bugs.py
-python3 run_baseline.py
+python -m scripts.reset_bugs
+python -m scripts.run_baseline
 ```
 
 ## Running the Benchmark
 
 ```bash
-python3 reset_bugs.py
+python -m scripts.reset_bugs
 python3 agent.py        # writes results/*.json and bugpilot.db
 open frontend/index.html
 ```
@@ -298,14 +289,14 @@ React (Vercel) -> fetch -> FastAPI (Render) -> SQLite (bugpilot.db)
 python3 -m uvicorn api:app --reload --port 8000
 
 # Terminal 2 — frontend
-cd dashboard
+cd frontend
 npm install
 npm start
 ```
 
 **Deployed:**
 - Backend (FastAPI): [Render](https://render.com) — free tier, running `uvicorn api:app --host 0.0.0.0 --port $PORT`
-- Frontend (React): [Vercel](https://vercel.com) — free tier, root directory `dashboard`, auto-detected as Create React App
+- Frontend (React): [Vercel](https://vercel.com) — free tier, root directory `frontend`, auto-detected as Create React App
 - `bugpilot.db` is committed to the repo so the deployed dashboard always shows real, seeded results — never an empty page
 - Free-tier backend sleeps after inactivity; the frontend shows a loading message on cold start (~50s) rather than appearing broken
 

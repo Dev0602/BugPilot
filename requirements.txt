@@ -1,5 +1,5 @@
-anthropic
-docker
-python-dotenv
-fastapi
-uvicorn
+anthropic==0.121.0
+docker==7.2.0
+python-dotenv==1.2.3
+fastapi==0.141.1
+uvicorn==0.52.3

@@ -1,7 +1,50 @@
+# Secrets / environment
 .env
+.env.*
+!.env.example
+
+# Python environments
 venv/
+.venv/
+
+# Python cache / tooling
 __pycache__/
-*.pyc
+*.py[cod]
 .pytest_cache/
-dashboard/node_modules/
-dashboard/build/
+.mypy_cache/
+.ruff_cache/
+
+# Coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# SQLite / runtime databases
+*.db
+*.db-shm
+*.db-wal
+
+# BugPilot generated runtime artifacts
+logs/
+results/
+evaluation/internal/results/
+evaluation/swebench/current/runs/
+
+# Node / React
+node_modules/
+frontend/node_modules/
+frontend/build/
+
+# Build artifacts
+dist/
+
+# IDEs
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Local agent backup files
+*.before-v4-*

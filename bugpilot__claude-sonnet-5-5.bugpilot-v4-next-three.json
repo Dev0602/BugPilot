@@ -1,0 +1,29 @@
+{
+    "total_instances": 3,
+    "submitted_instances": 3,
+    "completed_instances": 2,
+    "resolved_instances": 2,
+    "unresolved_instances": 0,
+    "empty_patch_instances": 0,
+    "error_instances": 1,
+    "completed_ids": [
+        "django__django-10914",
+        "django__django-16255"
+    ],
+    "incomplete_ids": [],
+    "empty_patch_ids": [],
+    "submitted_ids": [
+        "django__django-10914",
+        "django__django-16255",
+        "pylint-dev__pylint-7993"
+    ],
+    "resolved_ids": [
+        "django__django-10914",
+        "django__django-16255"
+    ],
+    "unresolved_ids": [],
+    "error_ids": [
+        "pylint-dev__pylint-7993"
+    ],
+    "schema_version": 2
+}
