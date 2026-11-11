@@ -10,15 +10,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import DB_PATH
 from .db import init_db
-from .seed import seed_internal_benchmark
+from .seed import seed_internal_benchmark, seed_swebench_v3
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     seed_internal_benchmark()
+    seed_swebench_v3()
     yield
-
 
 app = FastAPI(
     title="BugPilot API",

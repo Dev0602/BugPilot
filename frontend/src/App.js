@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
@@ -15,7 +16,7 @@ async function apiFetch(path) {
       const payload = await response.json();
       message = payload.detail || payload.error || message;
     } catch (_) {
-      // Keep the default message.
+      // Keep the HTTP status when the server does not return JSON.
     }
 
     throw new Error(message);
@@ -25,18 +26,17 @@ async function apiFetch(path) {
 }
 
 function bugName(path) {
-  if (!path) return "unknown";
-  return path.split("/").pop();
+  return path ? path.split("/").pop() : "unknown";
 }
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-  return `$${number.toFixed(5)}`;
+  if (value == null) return "N/A";
+  return `$${Number(value).toFixed(5)}`;
 }
 
 function formatSeconds(value) {
-  const number = Number(value || 0);
-  return `${number.toFixed(1)}s`;
+  if (value == null) return "N/A";
+  return `${Number(value).toFixed(1)}s`;
 }
 
 function truncate(value, limit = 420) {
@@ -47,9 +47,30 @@ function truncate(value, limit = 420) {
       ? value
       : JSON.stringify(value, null, 2);
 
-  if (text.length <= limit) return text;
+  return text.length <= limit
+    ? text
+    : `${text.slice(0, limit)}…`;
+}
 
-  return `${text.slice(0, limit)}…`;
+// SWE-bench V3 does not have recorded cost,
+// latency, or attempt-count measurements.
+function isMissingMetric(run, metric) {
+  return (
+    run?.metadata?.missing_metrics?.includes(metric) === true
+  );
+}
+
+// The original imported result is stored in `raw`.
+function isNotSubmitted(result) {
+  return (
+    result?.raw?.evaluation_status === "not_submitted" ||
+    result?.raw?.submitted === false
+  );
+}
+
+function resultStatus(result) {
+  if (isNotSubmitted(result)) return "not-submitted";
+  return result.success ? "pass" : "fail";
 }
 
 function buildReplaySteps(attemptReplay) {
@@ -89,35 +110,21 @@ function buildReplaySteps(attemptReplay) {
       tool.tool_name === "search_code" &&
       input.keyword
     ) {
-      detailParts.push(
-        `keyword: ${input.keyword}`
-      );
+      detailParts.push(`keyword: ${input.keyword}`);
     } else if (
       tool.tool_name === "get_function_signature" &&
       input.function_name
     ) {
-      detailParts.push(
-        input.function_name
-      );
-    } else if (
-      tool.tool_name === "list_directory"
-    ) {
-      detailParts.push(
-        input.path || "."
-      );
-    } else if (
-      tool.tool_name === "submit_fix"
-    ) {
+      detailParts.push(input.function_name);
+    } else if (tool.tool_name === "list_directory") {
+      detailParts.push(input.path || ".");
+    } else if (tool.tool_name === "submit_fix") {
       if (input.file_path) {
-        detailParts.push(
-          input.file_path
-        );
+        detailParts.push(input.file_path);
       }
 
       if (input.function_name) {
-        detailParts.push(
-          input.function_name
-        );
+        detailParts.push(input.function_name);
       }
     }
 
@@ -129,31 +136,21 @@ function buildReplaySteps(attemptReplay) {
 
     steps.push({
       kind: "tool",
-      status: tool.is_error
-        ? "fail"
-        : "neutral",
-      label:
-        `Attempt ${attemptNumber} · ${tool.tool_name}`,
-      detail:
-        detailParts.join(" · ") ||
-        "Agent tool call",
+      status: tool.is_error ? "fail" : "neutral",
+      label: `Attempt ${attemptNumber} · ${tool.tool_name}`,
+      detail: detailParts.join(" · ") || "Agent tool call",
       body:
         tool.tool_name === "submit_fix"
           ? truncate(
               {
-                diagnosis:
-                  input.diagnosis,
-                file_path:
-                  input.file_path,
-                function_name:
-                  input.function_name,
+                diagnosis: input.diagnosis,
+                file_path: input.file_path,
+                function_name: input.function_name,
               },
               900
             )
           : truncate(
-              tool.output_text ||
-                tool.input ||
-                "",
+              tool.output_text || tool.input || "",
               1200
             ),
     });
@@ -162,30 +159,21 @@ function buildReplaySteps(attemptReplay) {
   patches.forEach((patch) => {
     steps.push({
       kind: "patch",
-      status: patch.applied
-        ? "pass"
-        : "fail",
-      label:
-        `Attempt ${attemptNumber} · Patch`,
-      detail:
-        `${patch.file_path || "source file"}${
-          patch.function_name
-            ? ` · ${patch.function_name}`
-            : ""
-        }`,
+      status: patch.applied ? "pass" : "fail",
+      label: `Attempt ${attemptNumber} · Patch`,
+      detail: `${patch.file_path || "source file"}${
+        patch.function_name
+          ? ` · ${patch.function_name}`
+          : ""
+      }`,
       body:
         patch.diff_text ||
-        truncate(
-          patch.patched_code || "",
-          1800
-        ),
+        truncate(patch.patched_code || "", 1800),
     });
   });
 
   tests
-    .filter(
-      (test) => test.phase !== "initial"
-    )
+    .filter((test) => test.phase !== "initial")
     .forEach((test) => {
       const coverage =
         test.coverage != null
@@ -194,17 +182,12 @@ function buildReplaySteps(attemptReplay) {
 
       steps.push({
         kind: "test",
-        status: test.passed
-          ? "pass"
-          : "fail",
-        label:
-          `Attempt ${attemptNumber} · Verification`,
-        detail:
-          `${test.passed ? "PASS" : "FAIL"}${coverage}`,
-        body: truncate(
-          test.logs || "",
-          1400
-        ),
+        status: test.passed ? "pass" : "fail",
+        label: `Attempt ${attemptNumber} · Verification`,
+        detail: `${
+          test.passed ? "PASS" : "FAIL"
+        }${coverage}`,
+        body: truncate(test.logs || "", 1400),
       });
     });
 
@@ -212,56 +195,22 @@ function buildReplaySteps(attemptReplay) {
 }
 
 function App() {
-  const [runs, setRuns] =
-    useState([]);
+  const [runs, setRuns] = useState([]);
+  const [selectedRunId, setSelectedRunId] = useState("");
+  const [runResults, setRunResults] = useState([]);
+  const [runAttempts, setRunAttempts] = useState([]);
+  const [selected, setSelected] = useState(null);
 
-  const [
-    selectedRunId,
-    setSelectedRunId,
-  ] = useState("");
+  const [loadingRuns, setLoadingRuns] = useState(true);
+  const [loadingRun, setLoadingRun] = useState(false);
+  const [error, setError] = useState("");
 
-  const [
-    runResults,
-    setRunResults,
-  ] = useState([]);
-
-  const [
-    runAttempts,
-    setRunAttempts,
-  ] = useState([]);
-
-  const [
-    selected,
-    setSelected,
-  ] = useState(null);
-
-  const [
-    loadingRuns,
-    setLoadingRuns,
-  ] = useState(true);
-
-  const [
-    loadingRun,
-    setLoadingRun,
-  ] = useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [
-    replaySteps,
-    setReplaySteps,
-  ] = useState([]);
-
+  const [replaySteps, setReplaySteps] = useState([]);
   const [
     visibleReplaySteps,
     setVisibleReplaySteps,
   ] = useState([]);
-
-  const [
-    isReplaying,
-    setIsReplaying,
-  ] = useState(false);
+  const [isReplaying, setIsReplaying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,27 +220,17 @@ function App() {
         setLoadingRuns(true);
         setError("");
 
-        const data =
-          await apiFetch(
-            "/api/runs"
-          );
+        const data = await apiFetch("/api/runs");
 
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         setRuns(data);
-
-        if (data.length > 0) {
-          setSelectedRunId(
-            data[0].run_id
-          );
-        }
+        setSelectedRunId(
+          data.length ? data[0].run_id : ""
+        );
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err.message
-          );
+          setError(err.message);
         }
       } finally {
         if (!cancelled) {
@@ -325,10 +264,7 @@ function App() {
         setVisibleReplaySteps([]);
         setIsReplaying(false);
 
-        const [
-          results,
-          attempts,
-        ] = await Promise.all([
+        const [results, attempts] = await Promise.all([
           apiFetch(
             `/api/runs/${encodeURIComponent(
               selectedRunId
@@ -341,22 +277,14 @@ function App() {
           ),
         ]);
 
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         setRunResults(results);
         setRunAttempts(attempts);
-
-        setSelected(
-          results[0] || null
-        );
+        setSelected(results[0] || null);
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err.message
-          );
-
+          setError(err.message);
           setRunResults([]);
           setRunAttempts([]);
           setSelected(null);
@@ -375,91 +303,76 @@ function App() {
     };
   }, [selectedRunId]);
 
-  const selectedRun =
-    useMemo(
-      () =>
-        runs.find(
-          (run) =>
-            run.run_id ===
-            selectedRunId
-        ) || null,
-      [
-        runs,
-        selectedRunId,
-      ]
+  const selectedRun = useMemo(
+    () =>
+      runs.find(
+        (run) => run.run_id === selectedRunId
+      ) || null,
+    [runs, selectedRunId]
+  );
+
+  const summary = useMemo(() => {
+    const total = runResults.length;
+
+    const successes = runResults.filter(
+      (result) => result.success
+    ).length;
+
+    const totalCost = runResults.reduce(
+      (sum, result) =>
+        sum + Number(result.cost_usd || 0),
+      0
     );
 
-  const summary =
-    useMemo(() => {
-      const total =
-        runResults.length;
+    const totalLatency = runResults.reduce(
+      (sum, result) =>
+        sum + Number(result.latency_sec || 0),
+      0
+    );
 
-      const successes =
-        runResults.filter(
-          (result) =>
-            result.success
-        ).length;
+    return {
+      total,
+      successes,
+      successRate: total
+        ? (successes / total) * 100
+        : 0,
+      totalCost,
+      totalLatency,
+    };
+  }, [runResults]);
 
-      const totalCost =
-        runResults.reduce(
-          (sum, result) =>
-            sum +
-            Number(
-              result.cost_usd || 0
-            ),
-          0
-        );
+  const selectedAttempts = useMemo(() => {
+    if (!selected) return [];
 
-      const totalLatency =
-        runResults.reduce(
-          (sum, result) =>
-            sum +
-            Number(
-              result.latency_sec || 0
-            ),
-          0
-        );
+    return runAttempts
+      .filter(
+        (attempt) => attempt.bug === selected.bug
+      )
+      .sort(
+        (a, b) =>
+          a.attempt_number - b.attempt_number
+      );
+  }, [runAttempts, selected]);
 
-      return {
-        total,
-        successes,
-        successRate:
-          total
-            ? (successes /
-                total) *
-              100
-            : 0,
-        totalCost,
-        totalLatency,
-      };
-    }, [runResults]);
+  const missingAttempts = isMissingMetric(
+    selectedRun,
+    "attempts"
+  );
 
-  const selectedAttempts =
-    useMemo(() => {
-      if (!selected) {
-        return [];
-      }
+  const missingCost = isMissingMetric(
+    selectedRun,
+    "cost_usd"
+  );
 
-      return runAttempts
-        .filter(
-          (attempt) =>
-            attempt.bug ===
-            selected.bug
-        )
-        .sort(
-          (a, b) =>
-            a.attempt_number -
-            b.attempt_number
-        );
-    }, [
-      runAttempts,
-      selected,
-    ]);
+  const missingLatency = isMissingMetric(
+    selectedRun,
+    "latency_sec"
+  );
 
   async function runReplay() {
     if (
       !selected ||
-      selectedAttempts.length === 0 ||
+      !selectedAttempts.length ||
       isReplaying
     ) {
       return;
@@ -473,24 +386,17 @@ function App() {
 
       const replayPayloads = [];
 
-      for (
-        const attempt
-        of selectedAttempts
-      ) {
-        const payload =
-          await apiFetch(
-            `/api/attempts/${attempt.id}/replay`
-          );
-
-        replayPayloads.push(
-          payload
+      for (const attempt of selectedAttempts) {
+        const payload = await apiFetch(
+          `/api/attempts/${attempt.id}/replay`
         );
+
+        replayPayloads.push(payload);
       }
 
-      const steps =
-        replayPayloads.flatMap(
-          buildReplaySteps
-        );
+      const steps = replayPayloads.flatMap(
+        buildReplaySteps
+      );
 
       setReplaySteps(steps);
 
@@ -499,33 +405,22 @@ function App() {
         index < steps.length;
         index += 1
       ) {
-        await new Promise(
-          (resolve) =>
-            setTimeout(
-              resolve,
-              420
-            )
+        await new Promise((resolve) =>
+          setTimeout(resolve, 420)
         );
 
         setVisibleReplaySteps(
-          steps.slice(
-            0,
-            index + 1
-          )
+          steps.slice(0, index + 1)
         );
       }
     } catch (err) {
-      setError(
-        err.message
-      );
+      setError(err.message);
     } finally {
       setIsReplaying(false);
     }
   }
 
-  function selectResult(
-    result
-  ) {
+  function selectResult(result) {
     setSelected(result);
     setReplaySteps([]);
     setVisibleReplaySteps([]);
@@ -536,8 +431,7 @@ function App() {
     return (
       <div className="App">
         <div className="page-state">
-          Loading BugPilot run
-          history…
+          Loading BugPilot run history…
         </div>
       </div>
     );
@@ -548,41 +442,27 @@ function App() {
       <header className="hero">
         <div>
           <div className="eyebrow">
-            Autonomous debugging
-            observability
+            Autonomous debugging observability
           </div>
 
           <h1>BugPilot</h1>
 
           <p className="tagline">
-            Real run history,
-            agent tool traces,
-            generated patches,
-            and sandbox
-            verification.
+            Real run history, agent tool traces,
+            generated patches, and sandbox verification.
           </p>
         </div>
 
         <div className="run-picker">
-          <label htmlFor="run-select">
-            Run
-          </label>
+          <label htmlFor="run-select">Run</label>
 
           <select
             id="run-select"
-            value={
-              selectedRunId
+            value={selectedRunId}
+            onChange={(event) =>
+              setSelectedRunId(event.target.value)
             }
-            onChange={(
-              event
-            ) =>
-              setSelectedRunId(
-                event.target.value
-              )
-            }
-            disabled={
-              runs.length === 0
-            }
+            disabled={runs.length === 0}
           >
             {runs.length === 0 && (
               <option value="">
@@ -590,43 +470,32 @@ function App() {
               </option>
             )}
 
-            {runs.map(
-              (run) => (
-                <option
-                  key={
-                    run.run_id
-                  }
-                  value={
-                    run.run_id
-                  }
-                >
-                  {run.run_id} ·{" "}
-                  {run.status}
-                </option>
-              )
-            )}
+            {runs.map((run) => (
+              <option
+                key={run.run_id}
+                value={run.run_id}
+              >
+                {run.run_id} · {run.status}
+              </option>
+            ))}
           </select>
 
           {selectedRun && (
             <div className="run-meta">
               <span>
-                {selectedRun.benchmark ||
-                  "benchmark"}
+                {selectedRun.benchmark || "benchmark"}
               </span>
 
               <span>
-                {selectedRun.model ||
-                  "model"}
+                {selectedRun.model || "Not recorded"}
               </span>
 
               <span
                 className={`status-pill ${
-                  selectedRun.status ||
-                  "unknown"
+                  selectedRun.status || "unknown"
                 }`}
               >
-                {selectedRun.status ||
-                  "unknown"}
+                {selectedRun.status || "unknown"}
               </span>
             </div>
           )}
@@ -635,9 +504,7 @@ function App() {
 
       {error && (
         <div className="error-banner">
-          <strong>
-            Dashboard error:
-          </strong>{" "}
+          <strong>Dashboard error:</strong>{" "}
           {error}
         </div>
       )}
@@ -652,8 +519,7 @@ function App() {
           </div>
 
           <div className="stat-value success">
-            {summary.successes}/
-            {summary.total}
+            {summary.successes}/{summary.total}
           </div>
         </div>
 
@@ -663,10 +529,7 @@ function App() {
           </div>
 
           <div className="stat-value">
-            {summary.successRate.toFixed(
-              0
-            )}
-            %
+            {summary.successRate.toFixed(0)}%
           </div>
         </div>
 
@@ -676,9 +539,9 @@ function App() {
           </div>
 
           <div className="stat-value small">
-            {formatMoney(
-              summary.totalCost
-            )}
+            {missingCost
+              ? "N/A"
+              : formatMoney(summary.totalCost)}
           </div>
         </div>
 
@@ -688,24 +551,31 @@ function App() {
           </div>
 
           <div className="stat-value small">
-            {formatSeconds(
-              summary.totalLatency
-            )}
+            {missingLatency
+              ? "N/A"
+              : formatSeconds(summary.totalLatency)}
           </div>
         </div>
       </section>
 
+      {selectedRun?.metadata?.submitted_count != null && (
+        <p className="page-state">
+          Official SWE-bench:{" "}
+          {selectedRun.metadata.submitted_count} submitted
+          out of{" "}
+          {selectedRun.metadata.selected_count} selected.
+          Unsubmitted issues count toward the overall
+          result but are not claimed to be failed patches.
+        </p>
+      )}
+
       <section className="section-heading">
         <div>
-          <h2>
-            Run results
-          </h2>
+          <h2>Run results</h2>
 
           <p>
-            Select a bug to
-            inspect the diagnosis
-            and replay the real
-            agent trace.
+            Select a bug to inspect its diagnosis
+            and any recorded agent trace.
           </p>
         </div>
 
@@ -720,198 +590,172 @@ function App() {
         <div className="page-state">
           Loading run details…
         </div>
-      ) : runResults.length ===
-        0 ? (
+      ) : runResults.length === 0 ? (
         <div className="empty-state">
-          No saved bug results
-          were found for this run.
+          No saved bug results were found for this run.
         </div>
       ) : (
         <div className="layout">
           <div className="bug-list">
-            {runResults.map(
-              (result) => (
-                <button
-                  type="button"
-                  key={`${result.run_id}-${result.bug}`}
-                  className={`bug-row ${
-                    selected?.bug ===
-                    result.bug
-                      ? "selected"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    selectResult(
-                      result
-                    )
+            {runResults.map((result) => (
+              <button
+                type="button"
+                key={`${result.run_id}-${result.bug}`}
+                className={`bug-row ${
+                  selected?.bug === result.bug
+                    ? "selected"
+                    : ""
+                }`}
+                onClick={() => selectResult(result)}
+              >
+                <span
+                  className={`dot ${resultStatus(
+                    result
+                  )}`}
+                  style={
+                    isNotSubmitted(result)
+                      ? {
+                          backgroundColor: "#94a3b8",
+                        }
+                      : undefined
                   }
-                >
-                  <span
-                    className={`dot ${
-                      result.success
-                        ? "pass"
-                        : "fail"
-                    }`}
-                  />
+                />
 
-                  <span className="bug-name">
-                    {bugName(
-                      result.bug
-                    )}
-                  </span>
+                <span className="bug-name">
+                  {bugName(result.bug)}
+                  {isNotSubmitted(result)
+                    ? " · Not submitted"
+                    : ""}
+                </span>
 
-                  <span className="bug-meta">
-                    {
-                      result.attempts
-                    }{" "}
-                    attempt
-                    {result.attempts !==
-                    1
-                      ? "s"
-                      : ""}
-                    {" · "}
-                    {formatMoney(
-                      result.cost_usd
-                    )}
-                    {" · "}
-                    {formatSeconds(
-                      result.latency_sec
-                    )}
-                    {result.coverage !=
-                    null
-                      ? ` · cov ${result.coverage}%`
-                      : ""}
-                  </span>
-                </button>
-              )
-            )}
+                <span className="bug-meta">
+                  {missingAttempts
+                    ? "N/A attempts"
+                    : `${
+                        result.attempts
+                      } attempt${
+                        result.attempts === 1
+                          ? ""
+                          : "s"
+                      }`}
+                  {" · "}
+                  {missingCost
+                    ? "Cost N/A"
+                    : formatMoney(result.cost_usd)}
+                  {" · "}
+                  {missingLatency
+                    ? "Time N/A"
+                    : formatSeconds(result.latency_sec)}
+                  {result.coverage != null
+                    ? ` · cov ${result.coverage}%`
+                    : ""}
+                </span>
+              </button>
+            ))}
           </div>
 
           <aside className="detail-panel">
             {selected ? (
               <div className="detail">
                 <div
-                  className={`detail-status ${
-                    selected.success
-                      ? "pass"
-                      : "fail"
-                  }`}
+                  className={`detail-status ${resultStatus(
+                    selected
+                  )}`}
+                  style={
+                    isNotSubmitted(selected)
+                      ? {
+                          backgroundColor: "#64748b",
+                        }
+                      : undefined
+                  }
                 >
-                  {selected.success
-                    ? "✓ Fixed"
-                    : "✗ Failed"}
+                  {isNotSubmitted(selected)
+                    ? "— Not submitted"
+                    : selected.success
+                      ? "✓ Fixed"
+                      : "✗ Failed"}
                 </div>
 
-                <h3>
-                  {bugName(
-                    selected.bug
-                  )}
-                </h3>
+                <h3>{bugName(selected.bug)}</h3>
 
                 <div className="attempt-strip">
-                  {selectedAttempts.length >
-                  0 ? (
+                  {selectedAttempts.length > 0 ? (
                     selectedAttempts.map(
-                      (
-                        attempt
-                      ) => (
+                      (attempt) => (
                         <span
-                          key={
-                            attempt.id
-                          }
+                          key={attempt.id}
                           className={`attempt-chip ${
-                            attempt.status ||
-                            ""
+                            attempt.status || ""
                           }`}
                         >
                           Attempt{" "}
-                          {
-                            attempt.attempt_number
-                          }{" "}
-                          ·{" "}
-                          {
-                            attempt.status
-                          }
+                          {attempt.attempt_number} ·{" "}
+                          {attempt.status}
                         </span>
                       )
                     )
                   ) : (
                     <span className="attempt-chip">
-                      No traced
-                      attempts
+                      No traced attempts
                     </span>
                   )}
                 </div>
 
                 <button
                   className="replay-btn"
-                  onClick={
-                    runReplay
-                  }
+                  onClick={runReplay}
                   disabled={
                     isReplaying ||
-                    selectedAttempts.length ===
-                      0
+                    selectedAttempts.length === 0
                   }
                 >
                   {isReplaying
                     ? "Replaying real trace…"
-                    : selectedAttempts.length ===
-                      0
-                    ? "No trace available"
-                    : "▶ Replay real agent trace"}
+                    : selectedAttempts.length === 0
+                      ? "No trace available"
+                      : "▶ Replay real agent trace"}
                 </button>
 
                 <div className="detail-metrics">
                   <div>
-                    <span>
-                      Attempts
-                    </span>
-                    {
-                      selected.attempts
-                    }
+                    <span>Attempts</span>
+                    {missingAttempts
+                      ? "N/A"
+                      : selected.attempts}
                   </div>
 
                   <div>
-                    <span>
-                      Cost
-                    </span>
-                    {formatMoney(
-                      selected.cost_usd
-                    )}
+                    <span>Cost</span>
+                    {missingCost
+                      ? "N/A"
+                      : formatMoney(selected.cost_usd)}
                   </div>
 
                   <div>
-                    <span>
-                      Time
-                    </span>
-                    {formatSeconds(
-                      selected.latency_sec
-                    )}
+                    <span>Time</span>
+                    {missingLatency
+                      ? "N/A"
+                      : formatSeconds(
+                          selected.latency_sec
+                        )}
                   </div>
 
-                  {selected.coverage !=
-                    null && (
+                  {selected.coverage != null && (
                     <div>
-                      <span>
-                        Coverage
-                      </span>
-                      {
-                        selected.coverage
-                      }
-                      %
+                      <span>Coverage</span>
+                      {selected.coverage}%
                     </div>
                   )}
                 </div>
 
                 <div className="detail-block">
-                  <b>
-                    Diagnosis
-                  </b>
+                  <b>Diagnosis</b>
 
                   <p>
                     {selected.diagnosis ||
-                      "No diagnosis was required for this result."}
+                      (isNotSubmitted(selected)
+                        ? "No prediction was submitted for this issue."
+                        : "No diagnosis was recorded in the source results.")}
                   </p>
                 </div>
 
@@ -920,8 +764,7 @@ function App() {
 
                   <div className="code-stack">
                     <code>
-                      {selected.file_path ||
-                        "N/A"}
+                      {selected.file_path || "N/A"}
                     </code>
 
                     <code>
@@ -932,58 +775,38 @@ function App() {
                   </div>
                 </div>
 
-                {visibleReplaySteps.length >
-                  0 && (
+                {visibleReplaySteps.length > 0 && (
                   <div className="replay-log">
                     <div className="replay-heading">
-                      <b>
-                        Real agent
-                        replay
-                      </b>
-
+                      <b>Real agent replay</b>
                       <span>
-                        {
-                          visibleReplaySteps.length
-                        }
-                        /
-                        {
-                          replaySteps.length
-                        }
+                        {visibleReplaySteps.length}/
+                        {replaySteps.length}
                       </span>
                     </div>
 
                     {visibleReplaySteps.map(
-                      (
-                        step,
-                        index
-                      ) => (
+                      (step, index) => (
                         <div
                           key={`${step.label}-${index}`}
                           className={`replay-step ${step.kind} ${step.status}`}
                         >
                           <div className="replay-index">
-                            {index +
-                              1}
+                            {index + 1}
                           </div>
 
                           <div className="replay-content">
                             <div className="replay-label">
-                              {
-                                step.label
-                              }
+                              {step.label}
                             </div>
 
                             <div className="replay-detail">
-                              {
-                                step.detail
-                              }
+                              {step.detail}
                             </div>
 
                             {step.body && (
                               <pre className="replay-body">
-                                {
-                                  step.body
-                                }
+                                {step.body}
                               </pre>
                             )}
                           </div>
@@ -995,8 +818,7 @@ function App() {
               </div>
             ) : (
               <div className="empty-state">
-                Select a bug
-                to see details.
+                Select a bug to see details.
               </div>
             )}
           </aside>

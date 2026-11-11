@@ -1,0 +1,69 @@
+{
+  "benchmark": "SWE-bench Lite V3",
+  "source": "Official SWE-bench harness",
+  "selected_count": 10,
+  "submitted_count": 7,
+  "resolved_count": 2,
+  "results": [
+    {
+      "bug": "django__django-13315",
+      "success": true,
+      "submitted": true,
+      "evaluation_status": "resolved"
+    },
+    {
+      "bug": "sphinx-doc__sphinx-8273",
+      "success": false,
+      "submitted": false,
+      "evaluation_status": "not_submitted"
+    },
+    {
+      "bug": "sympy__sympy-18835",
+      "success": false,
+      "submitted": true,
+      "evaluation_status": "unresolved"
+    },
+    {
+      "bug": "matplotlib__matplotlib-25332",
+      "success": false,
+      "submitted": true,
+      "evaluation_status": "unresolved"
+    },
+    {
+      "bug": "sympy__sympy-21614",
+      "success": false,
+      "submitted": false,
+      "evaluation_status": "not_submitted"
+    },
+    {
+      "bug": "sympy__sympy-21171",
+      "success": false,
+      "submitted": true,
+      "evaluation_status": "unresolved"
+    },
+    {
+      "bug": "django__django-17051",
+      "success": true,
+      "submitted": true,
+      "evaluation_status": "resolved"
+    },
+    {
+      "bug": "django__django-14411",
+      "success": false,
+      "submitted": false,
+      "evaluation_status": "not_submitted"
+    },
+    {
+      "bug": "pallets__flask-5063",
+      "success": false,
+      "submitted": true,
+      "evaluation_status": "unresolved"
+    },
+    {
+      "bug": "django__django-15388",
+      "success": false,
+      "submitted": true,
+      "evaluation_status": "unresolved"
+    }
+  ]
+}

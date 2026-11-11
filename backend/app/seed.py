@@ -79,3 +79,74 @@ def seed_internal_benchmark():
         f"Imported {len(results)} benchmark results. "
         f"Resolved: {resolved}/{len(results)}"
     )
+
+
+def seed_swebench_v3():
+    """Import verified SWE-bench Lite V3 results."""
+
+    seed_file = (
+        Path(__file__).resolve().parent.parent
+        / "data"
+        / "swebench_v3_seed.json"
+    )
+
+    if not seed_file.is_file():
+        print("SWE-bench V3 seed file not found.")
+        return
+
+    data = json.loads(seed_file.read_text(encoding="utf-8"))
+    results = data["results"]
+
+    if (
+        len(results) != 10
+        or len({r["bug"] for r in results}) != 10
+        or sum(bool(r["submitted"]) for r in results) != 7
+        or sum(bool(r["success"]) for r in results) != 2
+        or any(r["success"] and not r["submitted"] for r in results)
+    ):
+        raise ValueError("Invalid SWE-bench V3 results")
+
+    init_db()
+
+    run_id = "swebench-lite-v3-final-clean"
+
+    with sqlite3.connect(DB_PATH) as conn:
+        existing = conn.execute(
+            "SELECT status FROM runs WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+
+    if existing and existing[0] == "completed":
+        print("SWE-bench V3 already imported.")
+        return
+
+    start_run(
+        run_id=run_id,
+        benchmark="SWE-bench Lite V3",
+        metadata={
+            "source": "Official SWE-bench harness",
+            "selected_count": 10,
+            "submitted_count": 7,
+            "not_submitted_count": 3,
+            "missing_metrics": [
+                "attempts",
+                "cost_usd",
+                "latency_sec",
+                "coverage",
+                "agent_traces",
+            ],
+        },
+    )
+
+    for result in results:
+        save_result(
+            result=result,
+            run_timestamp=run_id,
+        )
+
+    finish_run(
+        run_id=run_id,
+        status="completed",
+    )
+
+    print("Imported SWE-bench V3: 2/10 resolved (20%)")
