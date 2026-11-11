@@ -1,13 +1,23 @@
+
 import json
 import os
 import sqlite3
-
+from contextlib import asynccontextmanager
 from typing import Annotated
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-
 from .config import DB_PATH
+from .db import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize the SQLite schema before accepting API requests."""
+    init_db()
+    yield
+
 
 app = FastAPI(
     title="BugPilot API",
@@ -16,6 +26,7 @@ app = FastAPI(
         "API for BugPilot run history, attempts, "
         "tool calls, patches, and test results."
     ),
+    lifespan=lifespan,
 )
 
 app.add_middleware(
