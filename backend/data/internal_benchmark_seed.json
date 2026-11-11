@@ -1,0 +1,227 @@
+{
+  "benchmark": "internal",
+  "source_date": "2026-09-17",
+  "model": "claude-haiku-4-5",
+  "results": [
+    {
+      "bug": "bugs/bug_01_calculator",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01052,
+      "latency_sec": 6.8,
+      "coverage": 100,
+      "diagnosis": "The add function is performing subtraction (a - b) instead of addition (a + b). The test expects add(2, 3) to return 5, but the current implementation returns -1.",
+      "function_name": "add",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_02_discount",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01118,
+      "latency_sec": 6.7,
+      "coverage": 100,
+      "diagnosis": "The apply_discount function is missing a division by 100 to convert the discount_percent parameter from a percentage value (0-100) to a decimal fraction (0-1.0). Currently, it multiplies price directly by discount_percent without normalizing the percentage, causing the discount to be 20x the price instead of 20% of the price.",
+      "function_name": "apply_discount",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_03_grade",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00833,
+      "latency_sec": 4.4,
+      "coverage": 86,
+      "diagnosis": "The passing_grade function uses a strict greater-than comparison (> 60) instead of greater-than-or-equal (>= 60). This causes a score of exactly 60 to be marked as failing when it should pass.",
+      "function_name": "passing_grade",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_04_reverse",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01063,
+      "latency_sec": 5.6,
+      "coverage": 100,
+      "diagnosis": "The function uses string reversal (sentence[::-1]) which reverses all characters, but the requirement is to reverse the order of words. For input \"hello world\", it returns \"dlrow olleh\" instead of \"world hello\".",
+      "function_name": "reverse_words",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_05_sum_range",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01107,
+      "latency_sec": 7.7,
+      "coverage": 100,
+      "diagnosis": "The function uses `range(n)` which generates numbers from 0 to n-1. To sum numbers from 1 to n inclusive, it should use `range(1, n+1)` instead.",
+      "function_name": "sum_up_to",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_06_mutable_default",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01182,
+      "latency_sec": 8.5,
+      "coverage": 100,
+      "diagnosis": "Mutable default argument bug: The function uses a mutable list `[]` as a default parameter value. This list object is created once when the function is defined and shared across all function calls. When items are appended to this shared list, changes persist across calls, causing state to leak between invocations.",
+      "function_name": "add_item",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_07_word_count",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01149,
+      "latency_sec": 7.5,
+      "coverage": 100,
+      "diagnosis": "The count_words function is case-sensitive. It counts \"The\", \"the\", and \"THE\" as three separate words instead of treating them all as variations of the same word \"the\". The fix is to convert each word to lowercase before counting.",
+      "function_name": "count_words",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_08_factorial",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.11303,
+      "latency_sec": 12.6,
+      "coverage": 100,
+      "diagnosis": "The factorial function has an incomplete base case. It only checks for `n == 1`, but when `factorial(0)` is called, the condition is false, causing the function to recursively call `factorial(-1)`, `factorial(-2)`, etc., leading to infinite recursion and a RecursionError. The base case needs to handle both 0 and 1 (or any n <= 1) since 0! = 1 by mathematical definition.",
+      "function_name": "factorial",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_09_ats_exact_match",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.02354,
+      "latency_sec": 10.5,
+      "coverage": 13,
+      "diagnosis": "The `_exact_match` function uses a simple substring check (`kw in resume_lower`) without word boundaries. This causes it to match partial words. For example, \"js\" matches \"jsonify\" because \"js\" is a substring, but it should only match whole words. The function needs to use regex word boundaries `\\b` to respect word boundaries, just like the `_limited_synonym_match` and `_keyword_frequency` functions do.",
+      "function_name": "_exact_match",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_10_prime_checker",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01261,
+      "latency_sec": 9.5,
+      "coverage": 100,
+      "diagnosis": "The is_prime function uses range(2, int(n ** 0.5)) which excludes the square root value due to range's exclusive upper bound. This causes the loop to skip necessary divisor checks. For example, with n=8, int(8 ** 0.5) = 2, so range(2, 2) is empty and never checks if 2 divides 8. The fix is to include the upper bound by adding 1: range(2, int(n ** 0.5) + 1).",
+      "function_name": "is_prime",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_11_safe_divide",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01169,
+      "latency_sec": 6.3,
+      "coverage": 100,
+      "diagnosis": "The safe_divide function does not handle division by zero. It directly performs a / b without checking if b is 0, which causes a ZeroDivisionError. The test expects the function to return 0 when dividing by zero instead of raising an exception.",
+      "function_name": "safe_divide",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_12_invalid_input",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00971,
+      "latency_sec": 5.3,
+      "coverage": 100,
+      "diagnosis": "The parse_age function does not handle invalid inputs. It raises ValueError when given a non-numeric string like 'abc', and TypeError when given None. The function should catch these exceptions and return 0 as a default value.",
+      "function_name": "parse_age",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_13_list_index",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01059,
+      "latency_sec": 7.3,
+      "coverage": 100,
+      "diagnosis": "The function incorrectly accesses items[len(items)] which is always out of range. List indices in Python are 0-based, so the valid indices are 0 to len(items)-1. To get the last element, the index should be len(items)-1. Additionally, for empty lists, the function should return None as expected by the test.",
+      "function_name": "get_last_element",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_14_dictionary",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.00975,
+      "latency_sec": 5.6,
+      "coverage": 100,
+      "diagnosis": "The function uses direct dictionary access with bracket notation (user_dict[\"email\"]) which raises KeyError when the key is missing. The tests expect the function to return None when the \"email\" key doesn't exist in the dictionary. Using the .get() method with a default value of None will fix this issue.",
+      "function_name": "get_user_email",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_15_sets",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01266,
+      "latency_sec": 7.8,
+      "coverage": 100,
+      "diagnosis": "The function uses the union operator `|` instead of the intersection operator `&`. The function is named `find_common` which implies finding common elements between two lists, but it's currently returning all elements from both lists (union) instead of just the common elements (intersection).",
+      "function_name": "find_common",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_16_string_processing",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01131,
+      "latency_sec": 5.5,
+      "coverage": 100,
+      "diagnosis": "The `normalize_username` function only converts the input to lowercase but doesn't strip leading and trailing whitespace. The test `test_leading_trailing_spaces` expects the function to remove spaces from both ends of the string before converting to lowercase.",
+      "function_name": "normalize_username",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_17_recursion",
+      "success": false,
+      "attempts": 0,
+      "cost_usd": 0,
+      "latency_sec": 0,
+      "coverage": null,
+      "diagnosis": null,
+      "function_name": null,
+      "stop_reason": "infrastructure_error"
+    },
+    {
+      "bug": "bugs/bug_18_algorithm",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01041,
+      "latency_sec": 8.4,
+      "coverage": 100,
+      "diagnosis": "The binary_search function has a bug in the loop termination condition. The while loop uses `while low < high:` which exits when `low == high`, without checking if the element at that position is the target. This causes the function to return -1 for elements at the end of the array or for single-element arrays that contain the target.",
+      "function_name": "binary_search",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_19_empty_input",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01141,
+      "latency_sec": 5.4,
+      "coverage": 100,
+      "diagnosis": "The calculate_average function performs division by len(numbers) without checking if the list is empty. When given an empty list, len(numbers) is 0, causing a ZeroDivisionError. The function should return 0 for empty input as expected by the test.",
+      "function_name": "calculate_average",
+      "stop_reason": "tests_passed"
+    },
+    {
+      "bug": "bugs/bug_20_buzzword_detection",
+      "success": true,
+      "attempts": 1,
+      "cost_usd": 0.01197,
+      "latency_sec": 6.9,
+      "coverage": 100,
+      "diagnosis": "The count_buzzwords function performs case-sensitive substring matching. When buzzwords appear in the text with different cases (e.g., \"Passionate\" or \"NINJA\"), they don't match the lowercase buzzwords in the BUZZWORDS list (\"passionate\", \"ninja\"). The fix is to convert the input text to lowercase before performing the substring checks.",
+      "function_name": "count_buzzwords",
+      "stop_reason": "tests_passed"
+    }
+  ]
+}

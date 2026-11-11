@@ -10,12 +10,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import DB_PATH
 from .db import init_db
+from .seed import seed_internal_benchmark
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize the SQLite schema before accepting API requests."""
     init_db()
+    seed_internal_benchmark()
     yield
 
 
